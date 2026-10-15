@@ -48,43 +48,89 @@ canvas{display:block}
 @media(hover:hover){#cursor-glow{display:block}}
 @media(hover:none){#cursor-glow{display:none}}
 
-.back-home-float {
+/* 统一悬浮胶囊导航 */
+.xb-brand-pill-container {
   position: fixed;
   top: 18px;
   right: 18px;
-  z-index: 9999;
+  z-index: 99999;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: rgba(18, 24, 38, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 255, 255, 0.25);
-  border-radius: 999px;
-  color: #7fffff;
-  text-decoration: none;
-  font-size: 13px;
-  letter-spacing: 1px;
-  transition: all 0.25s ease;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 255, 255, 0.28);
+  border-radius: 9999px;
+  padding: 3px 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35), 0 0 12px rgba(0, 255, 255, 0.15);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
 }
-.back-home-float:hover {
-  background: rgba(0, 255, 255, 0.2);
+.xb-brand-pill-container:hover {
+  background: rgba(15, 23, 42, 0.9);
   border-color: rgba(0, 255, 255, 0.6);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(0, 255, 255, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+}
+.xb-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  color: #e2e8f0;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+.xb-pill-btn:hover {
+  color: #7fffff;
+  background: rgba(0, 255, 255, 0.12);
+}
+.xb-pill-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.xb-pill-arrow {
+  width: 9px;
+  height: 9px;
+  opacity: 0.6;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.xb-pill-btn:hover .xb-pill-arrow {
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+.xb-pill-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(0, 255, 255, 0.25);
+  margin: 0 2px;
+}
+@media (max-width: 640px) {
+  .xb-brand-pill-container { top: 12px; right: 12px; padding: 2px 4px; }
+  .xb-pill-btn { padding: 5px 8px; font-size: 11px; gap: 4px; }
+  .xb-pill-icon { width: 12px; height: 12px; }
 }
 </style>
 </head>
 <body>
 
-<a href="../" target="_top" class="back-home-float" title="返回全景工作台">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-  <span>全景主站</span>
-</a>
-<a href="https://21212121.xyz" target="_blank" class="back-home-float" style="left:116px;" title="访问岁月静好主博客">
-  <span>✍️ 主博客</span>
-</a>
+<div class="xb-brand-pill-container" id="xbBrandPill">
+  <a href="https://21212121.xyz" target="_blank" rel="noopener" class="xb-pill-btn xb-pill-blog" title="访问岁月静好 · 个人博客主站">
+    <svg class="xb-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+    <span>岁月静好 · 博客</span>
+    <svg class="xb-pill-arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 9.5L9.5 2.5M9.5 2.5H4M9.5 2.5V8"/></svg>
+  </a>
+  <span class="xb-pill-divider"></span>
+  <a href="https://a.21212121.xyz" target="_blank" rel="noopener" class="xb-pill-btn xb-pill-hub" title="前往小白数字空间 · 站群全景工作台">
+    <svg class="xb-pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+    <span>站群导航</span>
+  </a>
+</div>
 
 <div id="cursor-glow"></div>
 <div id="container"></div>
