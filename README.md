@@ -15,7 +15,7 @@
 - **渲染核心**：Three.js 0.160.0 / CSS3DRenderer / TrackballControls / WebGL
 - **手势引擎**：MediaPipe Tasks-Vision (HandLandmarker)
 - **CDN 加速**：Three.js 模块、Tween.js 及 MediaPipe 视觉模型资产全量托管于 `https://guzhicdn.21212121.xyz/`，大幅减少源站带宽负荷。
-- **站群互联**：界面右上角集成高质感品牌胶囊导航（`xb-brand-pill-container`），直达岁月静好博客主站（`https://21212121.xyz`）与全景导航站（`https://a.21212121.xyz`）。
+- **站群互联**：界面右上角集成高质感品牌胶囊导航（`xb-brand-pill-container`），直达岁月静好博客主站（`https://21212121.xyz`）与全景导航站（`https://nav.21212121.xyz`）。
 
 ## 🚀 自动部署与 CI/CD
 本项目已配置 GitHub Actions 自动化持续集成：
