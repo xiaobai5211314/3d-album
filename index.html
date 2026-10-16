@@ -216,80 +216,16 @@ canvas { display: block; }
 }
 #gesture-badge-icon { font-size: 16px; filter: drop-shadow(0 0 4px rgba(0,255,255,0.4)); }
 
-/* 左下角 AI 摄像头雷达与骨骼可视化画中画 */
-#cam-pip {
+/* 后台静默手势感知节点 (不显示摄像头窗口) */
+#cam-video, #cam-canvas {
+  display: none !important;
   position: fixed;
-  bottom: 84px;
-  left: 18px;
-  z-index: 100;
-  width: 200px;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glass);
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 16px rgba(0,255,255,0.15);
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  display: none;
-}
-#cam-pip.visible { display: block; }
-#cam-pip.minimized {
-  width: 140px;
-  height: 38px;
-}
-#cam-pip.minimized #cam-pip-body { display: none; }
-.pip-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: rgba(30, 41, 59, 0.7);
-  border-bottom: 1px solid rgba(0,255,255,0.15);
-  font-size: 11.5px;
-  color: #94a3b8;
-  letter-spacing: 1px;
-}
-.pip-title { display: flex; align-items: center; gap: 6px; color: #7dd3fc; font-weight: 600; }
-.pip-controls { display: flex; gap: 6px; }
-.pip-btn {
-  background: none;
-  border: none;
-  color: #94a3b8;
-  cursor: pointer;
-  padding: 2px 4px;
-  font-size: 12px;
-  border-radius: 4px;
-  line-height: 1;
-}
-.pip-btn:hover { color: #00ffff; background: rgba(0,255,255,0.1); }
-#cam-pip-body {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  background: #020617;
-}
-#cam-video {
-  display: none;
-}
-#cam-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  transform: scaleX(-1); /* 镜像画面 */
-}
-.pip-hud-overlay {
-  position: absolute;
-  bottom: 6px;
-  left: 8px;
-  right: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  top: -9999px;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
   pointer-events: none;
-  font-size: 10.5px;
-  font-family: monospace;
-  color: rgba(0, 255, 255, 0.85);
-  text-shadow: 0 0 4px #000;
 }
 
 /* 照片 3D 卡片 */
@@ -653,11 +589,6 @@ canvas { display: block; }
     width: 32px;
     height: 32px;
   }
-  #cam-pip {
-    width: 150px;
-    bottom: 68px;
-    left: 10px;
-  }
   .gesture-grid {
     grid-template-columns: 1fr;
     gap: 10px;
@@ -684,39 +615,21 @@ canvas { display: block; }
   </a>
 </div>
 
-<!-- 左上角手势与雷达控制台 -->
+<!-- 左上角手势状态控制台 -->
 <div id="gesture-control-bar">
-  <button id="toggle-camera-btn" class="hud-btn" title="点击开启或关闭前置摄像头手势识别">
-    <span class="status-dot" id="camera-status-dot"></span>
-    <span id="camera-btn-text">开启手势控制</span>
+  <button id="toggle-camera-btn" class="hud-btn active" title="点击开启或关闭手势识别">
+    <span class="status-dot active" id="camera-status-dot"></span>
+    <span id="camera-btn-text">手势识别已开启</span>
   </button>
   <div id="gesture-badge">
     <span id="gesture-badge-icon">✨</span>
-    <span id="gesture-badge-text">鼠标拖动旋转 / 滚轮缩放</span>
+    <span id="gesture-badge-text">镜头前展示手掌即可隔空控制</span>
   </div>
 </div>
 
-<!-- 左下角 AI 摄像头雷达画中画 PIP (含骨骼轨迹) -->
-<div id="cam-pip">
-  <div class="pip-header">
-    <div class="pip-title">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-      <span>AI 手势雷达</span>
-    </div>
-    <div class="pip-controls">
-      <button class="pip-btn" id="pip-minimize-btn" title="最小化/恢复">—</button>
-      <button class="pip-btn" id="pip-close-btn" title="关闭画中画">✕</button>
-    </div>
-  </div>
-  <div id="cam-pip-body">
-    <video id="cam-video" playsinline autoplay muted></video>
-    <canvas id="cam-canvas"></canvas>
-    <div class="pip-hud-overlay">
-      <span id="pip-tracking-state">TRACKING</span>
-      <span id="pip-fps-text">30 FPS</span>
-    </div>
-  </div>
-</div>
+<!-- 后台静默手势感知视频源 (不展示摄像头窗口) -->
+<video id="cam-video" playsinline autoplay muted style="display:none;position:fixed;pointer-events:none;opacity:0;"></video>
+<canvas id="cam-canvas" style="display:none;position:fixed;pointer-events:none;opacity:0;"></canvas>
 
 <!-- 鼠标光晕与 Three.js 场景挂载容器 -->
 <div id="cursor-glow"></div>
@@ -746,10 +659,6 @@ canvas { display: block; }
   
   <button class="action-icon-btn" id="btn-auto-orbit" title="开启/暂停 3D 自动巡航漫游">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-  </button>
-  <button class="action-icon-btn" id="btn-sound-toggle" title="音效开关">
-    <svg id="sound-icon-on" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-    <svg id="sound-icon-off" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
   </button>
   <button class="action-icon-btn" id="btn-gesture-guide" title="查看手势交互指南与快捷键">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -899,51 +808,9 @@ const handState = {
 };
 
 // ============================================================
-//  轻量合成音效 (Web Audio API - 0 下载无延迟)
+//  音效系统 (已按需彻底静音关闭)
 // ============================================================
-function playSynthSound(type) {
-  if (!soundEnabled) return;
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    
-    if (type === 'switch') {
-      // 升调灵动和弦
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(360, now);
-      osc.frequency.exponentialRampToValueAtTime(720, now + 0.25);
-      gain.gain.setValueAtTime(0.12, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-      osc.start(now);
-      osc.stop(now + 0.3);
-    } else if (type === 'burst') {
-      // 粒子华彩音
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(520, now);
-      osc.frequency.exponentialRampToValueAtTime(1040, now + 0.35);
-      gain.gain.setValueAtTime(0.18, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-      osc.start(now);
-      osc.stop(now + 0.45);
-    } else if (type === 'pinch') {
-      // 细微缩放刻度感
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(800, now);
-      gain.gain.setValueAtTime(0.04, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-      osc.start(now);
-      osc.stop(now + 0.09);
-    }
-  } catch (e) {
-    console.warn('Audio play error:', e);
-  }
-}
+function playSynthSound() {}
 
 // ============================================================
 //  照片数据构建 (支持 CDN + 容灾 Fallback)
@@ -1370,46 +1237,39 @@ function bindUIEvents() {
 
   // 摄像头开启/关闭切换
   const camBtn = document.getElementById('toggle-camera-btn');
-  camBtn.addEventListener('click', toggleCameraGesture);
-
-  // 画中画最小化与关闭
-  document.getElementById('pip-minimize-btn').addEventListener('click', () => {
-    document.getElementById('cam-pip').classList.toggle('minimized');
-  });
-  document.getElementById('pip-close-btn').addEventListener('click', stopCamera);
+  if (camBtn) camBtn.addEventListener('click', toggleCameraGesture);
 
   // 自动巡航开关
   const orbitBtn = document.getElementById('btn-auto-orbit');
-  orbitBtn.addEventListener('click', () => {
-    autoOrbit = !autoOrbit;
-    orbitBtn.classList.toggle('active', autoOrbit);
-    setGestureBadge('🔄', autoOrbit ? '自动巡航漫游中' : '自动巡航已暂停');
-  });
-
-  // 音效开关
-  const soundBtn = document.getElementById('btn-sound-toggle');
-  soundBtn.addEventListener('click', () => {
-    soundEnabled = !soundEnabled;
-    soundBtn.classList.toggle('active', soundEnabled);
-    document.getElementById('sound-icon-on').style.display = soundEnabled ? 'block' : 'none';
-    document.getElementById('sound-icon-off').style.display = soundEnabled ? 'none' : 'block';
-    if (soundEnabled) playSynthSound('switch');
-  });
+  if (orbitBtn) {
+    orbitBtn.addEventListener('click', () => {
+      autoOrbit = !autoOrbit;
+      orbitBtn.classList.toggle('active', autoOrbit);
+      setGestureBadge('🔄', autoOrbit ? '自动巡航漫游中' : '自动巡航已暂停');
+    });
+  }
 
   // 手势指南弹窗
   const guideModal = document.getElementById('guideModal');
-  document.getElementById('btn-gesture-guide').addEventListener('click', () => guideModal.classList.add('show'));
-  document.getElementById('guideCloseBtn').addEventListener('click', () => guideModal.classList.remove('show'));
-  guideModal.addEventListener('click', (e) => {
-    if (e.target === guideModal) guideModal.classList.remove('show');
-  });
+  const guideBtn = document.getElementById('btn-gesture-guide');
+  const guideClose = document.getElementById('guideCloseBtn');
+  if (guideBtn && guideModal) guideBtn.addEventListener('click', () => guideModal.classList.add('show'));
+  if (guideClose && guideModal) guideClose.addEventListener('click', () => guideModal.classList.remove('show'));
+  if (guideModal) {
+    guideModal.addEventListener('click', (e) => {
+      if (e.target === guideModal) guideModal.classList.remove('show');
+    });
+  }
 
   // Lightbox 关闭
   const lightbox = document.getElementById('photo-lightbox');
-  document.getElementById('lightboxCloseBtn').addEventListener('click', closeLightbox);
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) closeLightbox();
-  });
+  const lbClose = document.getElementById('lightboxCloseBtn');
+  if (lbClose && lightbox) lbClose.addEventListener('click', closeLightbox);
+  if (lightbox) {
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+  }
 }
 
 function openLightbox(src, name, index) {
@@ -1424,7 +1284,7 @@ function closeLightbox() {
 }
 
 // ============================================================
-//  手势识别生命周期 (MediaPipe Tasks-Vision)
+//  手势识别生命周期 (MediaPipe Tasks-Vision) - 纯后台静默运行
 // ============================================================
 async function toggleCameraGesture() {
   if (isCameraRunning) {
@@ -1438,12 +1298,11 @@ async function startCamera() {
   const dot = document.getElementById('camera-status-dot');
   const btnText = document.getElementById('camera-btn-text');
   const camBtn = document.getElementById('toggle-camera-btn');
-  const pip = document.getElementById('cam-pip');
 
   try {
-    dot.className = 'status-dot loading';
-    btnText.textContent = '加载手势引擎...';
-    setGestureBadge('⏳', '正在加载 MediaPipe 视觉模型...');
+    if (dot) dot.className = 'status-dot loading';
+    if (btnText) btnText.textContent = '初始化手势引擎...';
+    setGestureBadge('⏳', '正在加载 AI 手势模型...');
 
     if (!handLandmarker) {
       isModelLoading = true;
@@ -1474,11 +1333,18 @@ async function startCamera() {
       isModelLoading = false;
     }
 
-    // 申请摄像头视频流
-    btnText.textContent = '请求摄像头权限...';
+    // 后台申请摄像头视频流 (不向用户暴露视频视窗)
+    if (btnText) btnText.textContent = '请求手势权限...';
     camVideo = document.getElementById('cam-video');
-    camCanvas = document.getElementById('cam-canvas');
-    camCtx = camCanvas.getContext('2d');
+    if (!camVideo) {
+      camVideo = document.createElement('video');
+      camVideo.id = 'cam-video';
+      camVideo.setAttribute('playsinline', '');
+      camVideo.setAttribute('autoplay', '');
+      camVideo.muted = true;
+      camVideo.style.display = 'none';
+      document.body.appendChild(camVideo);
+    }
 
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
@@ -1491,26 +1357,20 @@ async function startCamera() {
     camVideo.srcObject = stream;
     await camVideo.play();
 
-    camCanvas.width = camVideo.videoWidth || 480;
-    camCanvas.height = camVideo.videoHeight || 360;
-
     isCameraRunning = true;
-    camBtn.classList.add('active');
-    dot.className = 'status-dot active';
-    btnText.textContent = '手势识别中';
-    pip.classList.add('visible');
-    setGestureBadge('📡', '手势雷达已就绪，请在镜头前展示手掌');
+    if (camBtn) camBtn.classList.add('active');
+    if (dot) dot.className = 'status-dot active';
+    if (btnText) btnText.textContent = '手势控制中';
+    setGestureBadge('📡', '手势识别已就绪，镜头前展示手掌即可控制');
 
     requestAnimationFrame(predictVideoFrame);
   } catch (err) {
-    console.error('Camera/MediaPipe error:', err);
-    dot.className = 'status-dot';
-    btnText.textContent = '开启手势控制';
-    camBtn.classList.remove('active');
-    pip.classList.remove('visible');
+    console.warn('Camera gesture silent fallback to touch/mouse:', err);
+    if (dot) dot.className = 'status-dot';
+    if (btnText) btnText.textContent = '开启手势控制';
+    if (camBtn) camBtn.classList.remove('active');
     isCameraRunning = false;
-    setGestureBadge('⚠️', '摄像头受限，已切换为鼠标/触控操作');
-    alert('无法启动摄像头：请确保在浏览器地址栏允许摄像头权限，或检查设备是否具备前置摄像头。');
+    setGestureBadge('✨', '鼠标拖动旋转 / 滚轮缩放');
   }
 }
 
@@ -1521,18 +1381,18 @@ function stopCamera() {
     camVideo.srcObject = null;
   }
   isCameraRunning = false;
-  document.getElementById('toggle-camera-btn').classList.remove('active');
-  document.getElementById('camera-status-dot').className = 'status-dot';
-  document.getElementById('camera-btn-text').textContent = '开启手势控制';
-  document.getElementById('cam-pip').classList.remove('visible');
+  const camBtn = document.getElementById('toggle-camera-btn');
+  const dot = document.getElementById('camera-status-dot');
+  const btnText = document.getElementById('camera-btn-text');
+  if (camBtn) camBtn.classList.remove('active');
+  if (dot) dot.className = 'status-dot';
+  if (btnText) btnText.textContent = '开启手势控制';
   handState.active = false;
   handState.mode = 'IDLE';
   setGestureBadge('✨', '鼠标拖动旋转 / 滚轮缩放');
 }
 
-// 视频帧率追踪与手势循环
-let frameCount = 0;
-let lastFpsTime = performance.now();
+// 纯后台手势预测帧循环 (无前台多余绘制，性能极佳)
 function predictVideoFrame() {
   if (!isCameraRunning || !handLandmarker || !camVideo) return;
 
@@ -1540,78 +1400,10 @@ function predictVideoFrame() {
     lastVideoTime = camVideo.currentTime;
     const now = performance.now();
     const result = handLandmarker.detectForVideo(camVideo, now);
-    renderHandSkeleton(result);
     processGestureLandmarks(result);
-
-    frameCount++;
-    if (now - lastFpsTime >= 1000) {
-      document.getElementById('pip-fps-text').textContent = `${frameCount} FPS`;
-      frameCount = 0;
-      lastFpsTime = now;
-    }
   }
 
   requestAnimationFrame(predictVideoFrame);
-}
-
-// ============================================================
-//  骨骼绘制与手势算法核心 (21 个手部关键点)
-// ============================================================
-// MediaPipe 手部 21 关节点连接拓扑
-const HAND_CONNECTIONS = [
-  [0,1],[1,2],[2,3],[3,4],       // 大拇指
-  [0,5],[5,6],[6,7],[7,8],       // 食指
-  [0,9],[9,10],[10,11],[11,12],  // 中指
-  [0,13],[13,14],[14,15],[15,16],// 无名指
-  [0,17],[17,18],[18,19],[19,20],// 小拇指
-  [5,9],[9,13],[13,17]           // 手掌基部骨骼
-];
-
-function renderHandSkeleton(result) {
-  if (!camCtx) return;
-  const w = camCanvas.width, h = camCanvas.height;
-  camCtx.clearRect(0, 0, w, h);
-
-  // 绘制半透明视频背景
-  camCtx.drawImage(camVideo, 0, 0, w, h);
-
-  // 扫描线滤镜
-  camCtx.fillStyle = 'rgba(15, 23, 42, 0.35)';
-  camCtx.fillRect(0, 0, w, h);
-
-  if (result.landmarks && result.landmarks.length > 0) {
-    const lm = result.landmarks[0];
-
-    // 绘制骨架连线
-    camCtx.lineWidth = 2.5;
-    camCtx.strokeStyle = 'rgba(0, 255, 255, 0.75)';
-    camCtx.shadowColor = '#00ffff';
-    camCtx.shadowBlur = 6;
-
-    for (const [s, e] of HAND_CONNECTIONS) {
-      camCtx.beginPath();
-      camCtx.moveTo(lm[s].x * w, lm[s].y * h);
-      camCtx.lineTo(lm[e].x * w, lm[e].y * h);
-      camCtx.stroke();
-    }
-
-    // 绘制关节点
-    for (let i = 0; i < lm.length; i++) {
-      const p = lm[i];
-      camCtx.beginPath();
-      const radius = (i === 4 || i === 8 || i === 12 || i === 16 || i === 20) ? 5 : 3.5;
-      camCtx.arc(p.x * w, p.y * h, radius, 0, Math.PI * 2);
-      camCtx.fillStyle = (i === 4 || i === 8) ? '#38bdf8' : '#7fffff';
-      camCtx.fill();
-    }
-
-    camCtx.shadowBlur = 0;
-    document.getElementById('pip-tracking-state').textContent = 'LOCKED';
-    document.getElementById('pip-tracking-state').style.color = '#38bdf8';
-  } else {
-    document.getElementById('pip-tracking-state').textContent = 'SEARCHING';
-    document.getElementById('pip-tracking-state').style.color = '#f59e0b';
-  }
 }
 
 function processGestureLandmarks(result) {
@@ -1803,6 +1595,7 @@ initScene();
 initStarRenderer();
 initParticleCanvas();
 animate();
+startCamera(); // 默认静默开启手势控制 (纯后台运行)
 
 </script>
 <script src="https://guzhicdn.21212121.xyz/vendor/tweenjs/tween.umd.js"></script>

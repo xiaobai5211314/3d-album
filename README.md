@@ -23,8 +23,8 @@
 
 ## 🛠️ 技术栈与特性
 - **渲染核心**：Three.js 0.160.0 / CSS3DRenderer / TrackballControls / WebGL (3200+ 动态星空粒子)
-- **手势引擎**：MediaPipe Tasks-Vision 0.10.3 (21 关节点骨骼雷达画中画 PIP 可视化)
-- **空间音效**：Web Audio API 原生合成晶体和弦与交互声效（0 额外音频请求，零延迟）
+- **手势引擎**：MediaPipe Tasks-Vision 0.10.3（纯后台静默手势感知，默认自动启动，无多余摄像头预览视窗，无感降级回退）
+- **纯净沉浸**：默认静音，无任何音频干扰，专注三维视界与光影流转
 - **高速 CDN**：Three.js、MediaPipe 视觉模型与 71 张精选照片全量托管于又拍云 CDN `https://guzhicdn.21212121.xyz/`
 - **站群互联**：右上角集成统一高质感半透明玻璃态品牌胶囊导航（`xb-brand-pill-container`），直达博客主站（`https://21212121.xyz`）与全景导航站（`https://nav.21212121.xyz`）。
 
