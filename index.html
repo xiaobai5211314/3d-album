@@ -1342,20 +1342,36 @@ async function startCamera() {
       camVideo.setAttribute('playsinline', '');
       camVideo.setAttribute('autoplay', '');
       camVideo.muted = true;
-      camVideo.style.display = 'none';
+      camVideo.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:320px;height:240px;opacity:0;pointer-events:none;z-index:-999;';
       document.body.appendChild(camVideo);
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: 'user',
-        width: { ideal: 480 },
-        height: { ideal: 360 }
-      }
-    });
+    let stream = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'user' },
+          width: { ideal: 480 },
+          height: { ideal: 360 }
+        }
+      });
+    } catch (e1) {
+      console.warn('Initial facingMode getUserMedia failed, retrying with raw video:true', e1);
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    }
 
     camVideo.srcObject = stream;
-    await camVideo.play();
+    await new Promise((resolve) => {
+      let resolved = false;
+      const done = () => {
+        if (!resolved) {
+          resolved = true;
+          camVideo.play().then(resolve).catch(resolve);
+        }
+      };
+      camVideo.onloadedmetadata = done;
+      setTimeout(done, 1200);
+    });
 
     isCameraRunning = true;
     if (camBtn) camBtn.classList.add('active');
@@ -1370,7 +1386,12 @@ async function startCamera() {
     if (btnText) btnText.textContent = '开启手势控制';
     if (camBtn) camBtn.classList.remove('active');
     isCameraRunning = false;
-    setGestureBadge('✨', '鼠标拖动旋转 / 滚轮缩放');
+    const isPermErr = err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError');
+    if (isPermErr) {
+      setGestureBadge('🔒', '未授予相机权限（可在地址栏左侧网站设置中开启）');
+    } else {
+      setGestureBadge('✨', '鼠标拖动旋转 / 滚轮缩放');
+    }
   }
 }
 
@@ -1396,11 +1417,15 @@ function stopCamera() {
 function predictVideoFrame() {
   if (!isCameraRunning || !handLandmarker || !camVideo) return;
 
-  if (camVideo.currentTime !== lastVideoTime) {
-    lastVideoTime = camVideo.currentTime;
-    const now = performance.now();
-    const result = handLandmarker.detectForVideo(camVideo, now);
-    processGestureLandmarks(result);
+  try {
+    if (camVideo.currentTime !== lastVideoTime && camVideo.readyState >= 2) {
+      lastVideoTime = camVideo.currentTime;
+      const now = performance.now();
+      const result = handLandmarker.detectForVideo(camVideo, now);
+      processGestureLandmarks(result);
+    }
+  } catch (e) {
+    console.warn('predictVideoFrame error:', e);
   }
 
   requestAnimationFrame(predictVideoFrame);
