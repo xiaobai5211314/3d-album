@@ -783,8 +783,8 @@ body.zen-mode #zen-exit-hint {
 </div>
 
 <!-- 后台静默手势感知视频源 (不展示摄像头窗口) -->
-<video id="cam-video" playsinline autoplay muted style="display:none;position:fixed;pointer-events:none;opacity:0;"></video>
-<canvas id="cam-canvas" style="display:none;position:fixed;pointer-events:none;opacity:0;"></canvas>
+<video id="cam-video" playsinline autoplay muted width="480" height="360" style="position:fixed;top:-9999px;left:-9999px;width:480px;height:360px;opacity:0;pointer-events:none;z-index:-999;"></video>
+<canvas id="cam-canvas" width="480" height="360" style="position:fixed;top:-9999px;left:-9999px;width:480px;height:360px;opacity:0;pointer-events:none;z-index:-999;"></canvas>
 
 <!-- 鼠标光晕与 Three.js 场景挂载容器 -->
 <div id="cursor-glow"></div>
@@ -1693,6 +1693,8 @@ function closeLightbox() {
 // ============================================================
 //  手势识别生命周期 (MediaPipe Tasks-Vision) - 纯后台静默运行
 // ============================================================
+let isStartingCamera = false;
+
 async function toggleCameraGesture() {
   if (isCameraRunning) {
     stopCamera();
@@ -1704,14 +1706,17 @@ async function toggleCameraGesture() {
 }
 
 async function startCamera(isAuto = false) {
+  if (isCameraRunning || isStartingCamera) return;
+  isStartingCamera = true;
+
   const dot = document.getElementById('camera-status-dot');
   const btnText = document.getElementById('camera-btn-text');
   const camBtn = document.getElementById('toggle-camera-btn');
 
   try {
     if (dot) dot.className = 'status-dot loading';
-    if (btnText) btnText.textContent = '初始化手势引擎...';
-    setGestureBadge('⏳', '正在加载 AI 手势模型...');
+    if (btnText) btnText.textContent = isAuto ? '连接手势引擎...' : '初始化手势引擎...';
+    setGestureBadge('⏳', isAuto ? '正在自动唤醒 AI 手势感知...' : '正在加载 AI 视觉模型...');
 
     if (!handLandmarker) {
       isModelLoading = true;
@@ -1756,8 +1761,8 @@ async function startCamera(isAuto = false) {
       isModelLoading = false;
     }
 
-    // 后台申请摄像头视频流 (不向用户暴露视频视窗)
-    if (btnText) btnText.textContent = '请求手势权限...';
+    // 后台获取摄像头视频流 (不向用户暴露视频视窗)
+    if (btnText) btnText.textContent = '请求摄像头权限...';
     camVideo = document.getElementById('cam-video');
     if (!camVideo) {
       camVideo = document.createElement('video');
@@ -1765,7 +1770,7 @@ async function startCamera(isAuto = false) {
       camVideo.setAttribute('playsinline', '');
       camVideo.setAttribute('autoplay', '');
       camVideo.muted = true;
-      camVideo.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:320px;height:240px;opacity:0;pointer-events:none;z-index:-999;';
+      camVideo.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:480px;height:360px;opacity:0;pointer-events:none;z-index:-999;';
       document.body.appendChild(camVideo);
     }
 
@@ -1800,7 +1805,7 @@ async function startCamera(isAuto = false) {
     if (camBtn) camBtn.classList.add('active');
     if (dot) dot.className = 'status-dot active';
     if (btnText) btnText.textContent = '手势控制中';
-    setGestureBadge('📡', '手势识别已就绪，镜头前展示手掌即可控制');
+    setGestureBadge('🖐', '手势识别已就绪 · 镜头前平掌/捏合即可控制');
 
     requestAnimationFrame(predictVideoFrame);
   } catch (err) {
@@ -1810,14 +1815,16 @@ async function startCamera(isAuto = false) {
     if (camBtn) camBtn.classList.remove('active');
     isCameraRunning = false;
     const isPermErr = err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError');
+    const isNotFound = err && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError');
     if (isPermErr) {
-      setGestureBadge('🔒', '请在地址栏左侧 🔒 允许相机权限');
-      if (!isAuto) {
-        alert('【手势识别需要摄像头权限】\n\n请点击浏览器顶部地址栏左侧的“🔒”或“站点设置”图标，将【摄像头】权限设置为“允许”，然后重新点击“开启手势控制”即可！\n\n（本相册 AI 纯本地端侧离线运算，绝不上报或保存任何摄像头画面，请放心开启）');
-      }
+      setGestureBadge('🔒', '未授予相机权限 · 点击按钮允许使用摄像头');
+    } else if (isNotFound) {
+      setGestureBadge('📷', '未检测到摄像头设备 · 支持鼠标/触控交互');
     } else {
       setGestureBadge('✨', '鼠标拖动旋转 / 滚轮缩放');
     }
+  } finally {
+    isStartingCamera = false;
   }
 }
 
@@ -1839,50 +1846,17 @@ function stopCamera() {
   setGestureBadge('✨', '鼠标拖动旋转 / 滚轮缩放');
 }
 
-// 检查相机权限并尝试智能自动恢复 (仅限已获授权的老用户，绝不在首屏对新用户强行弹窗或浪费带宽)
-async function checkCameraAutoStart() {
-  if (!navigator.permissions || !navigator.permissions.query) return;
-  try {
-    const status = await navigator.permissions.query({ name: 'camera' });
-    const userDisabled = localStorage.getItem('3d_gesture_disabled') === '1';
+// 遵循 AGENTS.md 规范：页面加载后手势控制默认自启；无权限或无设备时静默平滑回退，严禁弹窗阻断
+function autoInitCameraGesture() {
+  const userDisabled = localStorage.getItem('3d_gesture_disabled') === '1';
+  if (userDisabled) return;
 
-    // 若用户之前已在此域名允许过摄像头，且未手动点过关闭，则在首屏动画完全就绪后静默唤醒
-    if (status.state === 'granted' && !userDisabled) {
-      setTimeout(() => {
-        if (!isCameraRunning) {
-          startCamera(true).catch(e => console.warn('Silent auto-start skipped:', e));
-        }
-      }, 1600);
+  // 延迟 800ms，待 3D 卡片首屏飞入就绪后自动启动，既保持首屏 60fps 丝滑秒开，又实现开箱即用的手势自启
+  setTimeout(() => {
+    if (!isCameraRunning && !isStartingCamera) {
+      startCamera(true).catch(e => console.warn('Auto gesture silent catch:', e));
     }
-
-    // 监听用户在浏览器设置中随时修改权限的状态变更
-    status.onchange = () => {
-      if (status.state === 'granted' && !isCameraRunning && localStorage.getItem('3d_gesture_disabled') !== '1') {
-        startCamera(true).catch(e => console.warn('Permission change auto-start:', e));
-      } else if (status.state === 'denied' && isCameraRunning) {
-        stopCamera();
-        setGestureBadge('🔒', '相机权限已在浏览器中被禁用');
-      }
-    };
-  } catch (e) {
-    console.log('Permissions query not supported:', e);
-  }
-}
-
-// 空闲预热：当页面完全静止空闲时，低优先级静默预加载 JS 脚本，使得用户点击时能够秒开
-function preheatGestureEngine() {
-  const preheat = () => {
-    if (handLandmarker || isModelLoading) return;
-    const link = document.createElement('link');
-    link.rel = 'prefetch';
-    link.href = 'https://guzhicdn.21212121.xyz/vendor/mediapipe/tasks-vision/0.10.3/vision_bundle.js';
-    document.head.appendChild(link);
-  };
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(preheat, { timeout: 6000 });
-  } else {
-    setTimeout(preheat, 5000);
-  }
+  }, 800);
 }
 
 // 纯后台手势预测帧循环 (无前台多余绘制，性能极佳)
@@ -2245,9 +2219,8 @@ try { initStarRenderer(); } catch (e) { console.error('initStarRenderer error:',
 try { initParticleCanvas(); } catch (e) { console.error('initParticleCanvas error:', e); }
 try { animate(); } catch (e) { console.error('animate error:', e); }
 
-// 智能权限预检与空闲预热（首屏绝不阻塞 17MB AI 模型与 3D 飞入动画，老用户自动静默唤醒，新用户秒开）
-checkCameraAutoStart();
-preheatGestureEngine();
+// 页面加载默认自启手势控制 (遵循 AGENTS.md 规范：页面加载后手势控制默认自启，失败静默平滑回退)
+autoInitCameraGesture();
 
 </script>
 </body>
