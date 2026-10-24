@@ -314,14 +314,14 @@ body.zen-mode #zen-exit-hint {
 
 /* 后台静默手势感知节点 (不显示摄像头窗口) */
 #cam-video, #cam-canvas {
-  display: none !important;
   position: fixed;
   top: -9999px;
   left: -9999px;
-  width: 1px;
-  height: 1px;
+  width: 480px;
+  height: 360px;
   opacity: 0;
   pointer-events: none;
+  z-index: -999;
 }
 
 /* 照片 3D 卡片 - Apple 双圈微距硬件结构与全息扫光 */
@@ -788,11 +788,11 @@ body.zen-mode #zen-exit-hint {
 
 <!-- 左上角手势状态指示器 (全常驻无开关 · 默认全自启) -->
 <div id="gesture-control-bar">
-  <div id="gesture-status-pill" class="hud-pill" title="AI 手势追踪已常驻开启">
+  <div id="gesture-status-pill" class="hud-pill" title="手势追踪已默认自启 · 点击可重新请求相机" style="cursor: pointer;">
     <span class="status-dot loading" id="camera-status-dot"></span>
     <span id="camera-status-text">启动手势感知...</span>
   </div>
-  <div id="gesture-badge">
+  <div id="gesture-badge" title="点击可重新尝试手势感知" style="cursor: pointer;">
     <span id="gesture-badge-icon">⏳</span>
     <span id="gesture-badge-text">正在连接摄像头 AI 视觉感知...</span>
   </div>
@@ -805,15 +805,15 @@ body.zen-mode #zen-exit-hint {
 <!-- 鼠标光晕与 Three.js 场景挂载容器 -->
 <div id="cursor-glow"></div>
 <div id="container"></div>
-<div id="layout-name">照片墙</div>
+<div id="layout-name">水晶球</div>
 
 <!-- 底部中央 Dock 切换器 -->
 <div id="bottom-dock">
-  <button class="layout-btn active" data-layout="0" title="周期表阵列展示">
+  <button class="layout-btn" data-layout="0" title="周期表阵列展示">
     <svg class="dock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
     <span>照片墙</span>
   </button>
-  <button class="layout-btn" data-layout="1" title="晶莹球体环绕分布">
+  <button class="layout-btn active" data-layout="1" title="晶莹球体环绕分布">
     <svg class="dock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><ellipse cx="12" cy="12" rx="4.5" ry="9"/></svg>
     <span>水晶球</span>
   </button>
@@ -943,7 +943,7 @@ let camera, scene, renderer, controls;
 const objects = [];
 const targets = { table: [], sphere: [], helix: [], grid: [] };
 const photoData = [];
-let currentLayout = 0;
+let currentLayout = 1;
 const layoutNames = ['照片墙 (Table)', '水晶球 (Sphere)', '螺旋塔 (Helix)', '展览厅 (Grid)'];
 const layoutTitles = [
   '照片墙 · CYBER MATRIX',
@@ -1429,9 +1429,9 @@ function initScene() {
     scene.add(obj);
     objects.push(obj);
 
-    // 形态 1：元素周期表照片墙 (Table) - 适配微距比例
+    // 形态 1：元素周期表照片墙 (Table) - 适配微距比例与垂直居中
     const tTable = new THREE.Object3D();
-    tTable.position.set(d.col * 148 - 1406, -(d.row * 192) + 1056, 0);
+    tTable.position.set(d.col * 148 - 1406, -(d.row * 192) + 480, 0);
     targets.table.push(tTable);
   }
 
@@ -1481,8 +1481,8 @@ function initScene() {
   // 交互事件监听
   bindUIEvents();
 
-  // 初始启动为照片墙形态
-  switchLayout(0, true);
+  // 初始启动为旗舰 3D 水晶球形态
+  switchLayout(1, true);
 
   window.addEventListener('resize', () => {
     camera.aspect = innerWidth / innerHeight;
@@ -1635,11 +1635,17 @@ function bindUIEvents() {
     }
   }, { passive: true });
 
-  // 手势状态胶囊（若因未授权或离线未就绪，轻点可重新唤醒）
+  // 手势状态胶囊与提示徽章（点击均可重新触发摄像头授权与引擎初始化）
   const pill = document.getElementById('gesture-status-pill');
   if (pill) {
     pill.addEventListener('click', () => {
-      if (!isCameraRunning) initGestureEngine();
+      initGestureEngine(true);
+    });
+  }
+  const badge = document.getElementById('gesture-badge');
+  if (badge) {
+    badge.addEventListener('click', () => {
+      if (!isCameraRunning) initGestureEngine(true);
     });
   }
 
@@ -1715,8 +1721,14 @@ function closeLightbox() {
 // ============================================================
 let isStartingCamera = false;
 
-async function initGestureEngine() {
-  if (isCameraRunning || isStartingCamera) return;
+async function initGestureEngine(userTriggered = false) {
+  if (isCameraRunning) {
+    if (userTriggered) {
+      setGestureBadge('🖐', '手势已处于开启状态 · 面向镜头展示手掌即可');
+    }
+    return;
+  }
+  if (isStartingCamera) return;
   isStartingCamera = true;
 
   const dot = document.getElementById('camera-status-dot');
@@ -1823,14 +1835,14 @@ async function initGestureEngine() {
     const isPermErr = err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError');
     const isNotFound = err && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError');
     if (isPermErr) {
-      if (statusText) statusText.textContent = '未获相机权限';
-      setGestureBadge('🔒', '未获相机权限 · 点击此胶囊重试或在地址栏左侧 🔒 允许');
+      if (statusText) statusText.textContent = '未获相机权限 · 点击开启';
+      setGestureBadge('🔒', '未获相机权限 · 点击此处授权或在浏览器地址栏左侧 🔒 允许');
     } else if (isNotFound) {
       if (statusText) statusText.textContent = '未检测到摄像头';
       setGestureBadge('📷', '未检测到可用摄像头 · 已启用触控/鼠标交互');
     } else {
-      if (statusText) statusText.textContent = '触控/鼠标模式';
-      setGestureBadge('✨', '鼠标拖动旋转 / 滚轮缩放');
+      if (statusText) statusText.textContent = '触控/鼠标模式 · 点击重试';
+      setGestureBadge('✨', '鼠标拖动旋转 / 滚轮缩放 · 点击重试手势');
     }
   } finally {
     isStartingCamera = false;
