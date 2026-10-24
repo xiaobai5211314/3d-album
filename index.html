@@ -258,6 +258,10 @@ canvas { display: block; }
 }
 .element img {
   position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   border: none;
   border-radius: 7px;
   object-fit: cover;
@@ -1041,9 +1045,7 @@ function initScene() {
     const tc1Url = `https://tc1.21212121.xyz/xb/QQ%E5%A4%B4%E5%83%8F/${d.name}`;
 
     const img = new Image();
-    img.loading = 'lazy';
     img.alt = `Photo ${d.name}`;
-    img.src = cdnUrl;
 
     let fallbackStep = 0;
     img.onerror = () => {
@@ -1063,6 +1065,10 @@ function initScene() {
       }
     };
     img.onload = () => fitImg(img, 120, 160);
+    img.src = cdnUrl;
+    if (img.complete && (img.naturalWidth || img.width)) {
+      fitImg(img, 120, 160);
+    }
 
     inner.appendChild(img);
     el.appendChild(inner);
@@ -1142,13 +1148,16 @@ function initScene() {
 }
 
 function fitImg(img, dw, dh) {
+  const nw = img.naturalWidth || img.width;
+  const nh = img.naturalHeight || img.height;
+  if (!nw || !nh) return;
   let r = 1;
-  if (img.width / img.height >= dw / dh) {
-    if (img.width > dw) r = dw / img.width;
+  if (nw / nh >= dw / dh) {
+    if (nw > dw) r = dw / nw;
   } else {
-    if (img.height > dh) r = dh / img.height;
+    if (nh > dh) r = dh / nh;
   }
-  const w = img.width * r, h = img.height * r;
+  const w = nw * r, h = nh * r;
   img.style.width = w + 'px';
   img.style.height = h + 'px';
   if (w < dw) img.style.left = ((dw - w) / 2) + 'px';
