@@ -1754,18 +1754,56 @@ async function initGestureEngine(userTriggered = false) {
       camVideo.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:480px;height:360px;opacity:0;pointer-events:none;z-index:-999;';
       document.body.appendChild(camVideo);
     }
+
     let stream = null;
+    let lastErr = null;
+
+    // A. 优先尝试理想分辨率的用户前置摄像头
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: 'user' },
-          width: { ideal: 480 },
-          height: { ideal: 360 }
+          width: { ideal: 640 },
+          height: { ideal: 480 }
         }
       });
     } catch (e1) {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      lastErr = e1;
     }
+
+    // B. 若失败，尝试最简 video: true 参数请求
+    if (!stream) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      } catch (e2) {
+        lastErr = e2;
+      }
+    }
+
+    // C. 深度硬件适配：若默认通道被占用（如虚拟驱动/独占模式），遍历系统所有摄像头逐个探测可用源
+    if (!stream && navigator.mediaDevices.enumerateDevices) {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        for (const dev of videoDevices) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: { deviceId: { exact: dev.deviceId } }
+            });
+            if (stream) break;
+          } catch (devErr) {
+            lastErr = devErr;
+          }
+        }
+      } catch (enumErr) {
+        lastErr = enumErr;
+      }
+    }
+
+    if (!stream) {
+      throw lastErr || new Error('CAMERA_STREAM_FAILED');
+    }
+
     camVideo.srcObject = stream;
     await new Promise((resolve) => {
       let resolved = false;
@@ -1825,6 +1863,8 @@ async function initGestureEngine(userTriggered = false) {
     isCameraRunning = true;
     if (dot) dot.className = 'status-dot active';
     if (statusText) statusText.textContent = 'AI 手势感知中';
+    const badge = document.getElementById('gesture-badge');
+    if (badge) badge.style.display = 'inline-flex';
     setGestureBadge('🖐', '手势已开启 · 镜头前展示手掌即可隔空操作');
 
     requestAnimationFrame(predictVideoFrame);
@@ -1834,15 +1874,15 @@ async function initGestureEngine(userTriggered = false) {
     if (dot) dot.className = 'status-dot';
     const isPermErr = err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError');
     const isNotFound = err && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError');
+    const badge = document.getElementById('gesture-badge');
+    if (badge) badge.style.display = 'none';
+
     if (isPermErr) {
       if (statusText) statusText.textContent = '未获相机权限 · 点击开启';
-      setGestureBadge('🔒', '未获相机权限 · 点击此处授权或在浏览器地址栏左侧 🔒 允许');
     } else if (isNotFound) {
-      if (statusText) statusText.textContent = '未检测到摄像头';
-      setGestureBadge('📷', '未检测到可用摄像头 · 已启用触控/鼠标交互');
+      if (statusText) statusText.textContent = '触控/鼠标模式';
     } else {
-      if (statusText) statusText.textContent = '触控/鼠标模式 · 点击重试';
-      setGestureBadge('✨', '鼠标拖动旋转 / 滚轮缩放 · 点击重试手势');
+      if (statusText) statusText.textContent = '触控/鼠标模式 · 点击开启手势';
     }
   } finally {
     isStartingCamera = false;
@@ -1976,6 +2016,9 @@ function setGestureBadge(icon, text) {
   if (iconEl) iconEl.textContent = icon;
   if (textEl) textEl.textContent = text;
   if (badge) {
+    if (isCameraRunning || isStartingCamera) {
+      badge.style.display = 'inline-flex';
+    }
     badge.classList.add('highlight');
     clearTimeout(badge._hlTimer);
     badge._hlTimer = setTimeout(() => badge.classList.remove('highlight'), 300);
