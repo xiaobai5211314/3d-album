@@ -54,7 +54,7 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  background: #000;
+  background: #020617;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   color: var(--text-main);
   user-select: none;
@@ -62,6 +62,85 @@ html, body {
 }
 canvas { display: block; }
 #container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
+
+/* 深空星云与流光极光 (GPU 加速) */
+.cosmic-nebula {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 120%, #030712 0%, #010409 100%);
+}
+.nebula-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.45;
+  animation: floatNebula 24s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+.nebula-1 {
+  width: 650px;
+  height: 650px;
+  top: -150px;
+  left: 15%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, rgba(14, 165, 233, 0.1) 60%, transparent 80%);
+}
+.nebula-2 {
+  width: 780px;
+  height: 780px;
+  bottom: -220px;
+  right: 12%;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, rgba(99, 102, 241, 0.12) 60%, transparent 80%);
+  animation-duration: 32s;
+  animation-direction: alternate-reverse;
+}
+.nebula-3 {
+  width: 520px;
+  height: 520px;
+  top: 40%;
+  left: 65%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.28) 0%, rgba(6, 182, 212, 0.08) 60%, transparent 80%);
+  animation-duration: 28s;
+}
+@keyframes floatNebula {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(50px, -35px) scale(1.1); }
+  100% { transform: translate(-35px, 45px) scale(0.96); }
+}
+
+/* 沉浸全屏模式 */
+body.zen-mode #bottom-dock,
+body.zen-mode #gesture-control-bar,
+body.zen-mode .xb-brand-pill-container,
+body.zen-mode #layout-name {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(20px) !important;
+}
+#zen-exit-hint {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 8px 18px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 255, 255, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 255, 255, 0.2);
+  font-size: 13px;
+  color: #e2e8f0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+body.zen-mode #zen-exit-hint {
+  opacity: 1;
+}
 
 /* 顶部形态切换名称 HUD */
 #layout-name {
@@ -229,33 +308,74 @@ canvas { display: block; }
   pointer-events: none;
 }
 
-/* 照片 3D 卡片 */
+/* 照片 3D 卡片 - Apple 双圈微距硬件结构与全息扫光 */
 .element {
-  width: 120px;
-  height: 160px;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 0 16px rgba(0, 255, 255, 0.22);
-  border: 1px solid rgba(127, 255, 255, 0.16);
-  background: rgba(10, 25, 47, 0.65);
+  width: 128px;
+  height: 172px;
+  border-radius: 14px;
+  padding: 2.5px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(0, 255, 255, 0.16) 45%, rgba(168, 85, 247, 0.22) 100%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 18px rgba(0, 255, 255, 0.18);
   cursor: pointer;
-  transition: box-shadow 0.3s, border-color 0.3s, transform 0.3s;
-  backface-visibility: hidden;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s, filter 0.4s;
+  backface-visibility: visible;
+  transform-style: preserve-3d;
 }
 .element:hover {
-  box-shadow: 0 0 35px rgba(0, 255, 255, 0.7), 0 0 70px rgba(0, 255, 255, 0.2);
-  border-color: rgba(0, 255, 255, 0.65);
-  transform: scale(1.05);
+  transform: scale(1.12) translateZ(45px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 45px rgba(0, 255, 255, 0.65), 0 0 80px rgba(168, 85, 247, 0.35);
+  filter: brightness(1.1);
 }
 .element-inner {
   position: relative;
   width: 100%;
   height: 100%;
+  border-radius: 11.5px;
+  overflow: hidden;
+  background: #090e1a;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  background: radial-gradient(circle at center, rgba(14, 165, 233, 0.15) 0%, rgba(2, 6, 23, 0.8) 100%);
+}
+.element-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 11.5px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  z-index: 3;
+}
+/* 全息扫光 */
+.element-inner::after {
+  content: '';
+  position: absolute;
+  top: -120%;
+  left: -120%;
+  width: 300%;
+  height: 300%;
+  background: linear-gradient(
+    115deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.18) 46%,
+    rgba(0, 255, 255, 0.35) 50%,
+    rgba(192, 132, 252, 0.25) 54%,
+    transparent 60%
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+.element:hover .element-inner::after {
+  opacity: 1;
+  animation: holoSheen 1.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes holoSheen {
+  0% { transform: translateY(-40%) rotate(25deg); }
+  100% { transform: translateY(40%) rotate(25deg); }
 }
 .element img {
   position: absolute;
@@ -264,9 +384,27 @@ canvas { display: block; }
   width: 100%;
   height: 100%;
   border: none;
-  border-radius: 7px;
+  border-radius: 11px;
   object-fit: cover;
   transition: opacity 0.4s;
+}
+.element .card-tag {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: rgba(10, 16, 32, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 10px;
+  font-weight: 600;
+  color: #e2e8f0;
+  letter-spacing: 0.04em;
+  z-index: 5;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 .element .placeholder-avatar {
   display: flex;
@@ -283,7 +421,7 @@ canvas { display: block; }
   stroke: rgba(0, 255, 255, 0.5);
 }
 
-/* 底部中央悬浮 Dock 工具栏 */
+/* 底部中央悬浮 Dock 工具栏 (Apple 玻璃态) */
 #bottom-dock {
   position: fixed;
   bottom: 22px;
@@ -292,14 +430,15 @@ canvas { display: block; }
   z-index: 90;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 6px 10px;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid var(--border-glass);
+  background: rgba(10, 16, 32, 0.78);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 9999px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 255, 255, 0.15);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 24px rgba(0, 255, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .layout-btn {
   display: inline-flex;
@@ -317,19 +456,19 @@ canvas { display: block; }
   white-space: nowrap;
 }
 .layout-btn:hover {
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.08);
 }
 .layout-btn.active {
-  background: rgba(0, 255, 255, 0.16);
-  border-color: rgba(0, 255, 255, 0.55);
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.22) 0%, rgba(168, 85, 247, 0.2) 100%);
+  border-color: rgba(0, 255, 255, 0.6);
   color: #00ffff;
-  box-shadow: 0 0 14px rgba(0, 255, 255, 0.25);
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.32);
 }
 .dock-divider {
   width: 1px;
   height: 18px;
-  background: rgba(0, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.14);
   margin: 0 2px;
 }
 .action-icon-btn {
@@ -343,7 +482,7 @@ canvas { display: block; }
   border: 1px solid transparent;
   color: #94a3b8;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .action-icon-btn:hover {
   background: rgba(0, 255, 255, 0.12);
@@ -352,9 +491,9 @@ canvas { display: block; }
 }
 .action-icon-btn.active {
   color: #00ffff;
-  background: rgba(0, 255, 255, 0.18);
-  border-color: rgba(0, 255, 255, 0.6);
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+  background: rgba(0, 255, 255, 0.22);
+  border-color: rgba(0, 255, 255, 0.65);
+  box-shadow: 0 0 14px rgba(0, 255, 255, 0.35);
 }
 
 /* 鼠标光晕 */
@@ -606,6 +745,15 @@ canvas { display: block; }
 </head>
 <body>
 
+<!-- 深空星云流光层 (GPU 加速) -->
+<div class="cosmic-nebula">
+  <div class="nebula-orb nebula-1"></div>
+  <div class="nebula-orb nebula-2"></div>
+  <div class="nebula-orb nebula-3"></div>
+</div>
+
+<div id="zen-exit-hint">按 ESC 键或单击屏幕退出沉浸画廊模式</div>
+
 <!-- 统一站群品牌胶囊导航 -->
 <div class="xb-brand-pill-container" id="xbBrandPill">
   <a href="https://21212121.xyz" target="_blank" rel="noopener" class="xb-pill-btn xb-pill-blog" title="访问岁月静好 · 个人博客主站">
@@ -662,8 +810,14 @@ canvas { display: block; }
   
   <span class="dock-divider"></span>
   
+  <button class="action-icon-btn" id="btn-meteor-burst" title="触发天体流星雨与华彩爆发">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
+  </button>
   <button class="action-icon-btn" id="btn-auto-orbit" title="开启/暂停 3D 自动巡航漫游">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+  </button>
+  <button class="action-icon-btn" id="btn-zen-mode" title="开启/退出极简沉浸全屏画廊">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
   </button>
   <button class="action-icon-btn" id="btn-gesture-guide" title="查看手势交互指南与快捷键">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -773,14 +927,26 @@ const targets = { table: [], sphere: [], helix: [], grid: [] };
 const photoData = [];
 let currentLayout = 0;
 const layoutNames = ['照片墙 (Table)', '水晶球 (Sphere)', '螺旋塔 (Helix)', '展览厅 (Grid)'];
+const layoutTitles = [
+  '照片墙 · CYBER MATRIX',
+  '水晶球 · CELESTIAL ORB',
+  '螺旋塔 · GENOME HELIX',
+  '展览厅 · HOLO GALLERY'
+];
 const clock = new THREE.Clock();
 
 // 自动巡航与物理平滑
 let autoOrbit = false;
 let orbitAngle = 0;
 
-// 星空与 2D 粒子系统
+// 星空、天体星环与 2D 粒子系统
 let starPoints, starVelocities;
+let astrolabeGroup = null;
+let floorLaserGrid = null;
+let warpSpeedFactor = 0;
+const warpRings = [];
+const meteors = [];
+let triggerMeteorStorm = 0;
 const mouseTrail = [];
 const burstList = [];
 let pCanvas, pCtx;
@@ -840,10 +1006,10 @@ function buildPhotoData() {
 }
 
 // ============================================================
-//  三维星空粒子场 (WebGL 深度层)
+//  三维星空粒子场 (WebGL 深度层 · 支持空间跃迁光流)
 // ============================================================
 function createStarField() {
-  const N = 3200;
+  const N = 4600;
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(N * 3);
   const col = new Float32Array(N * 3);
@@ -852,12 +1018,24 @@ function createStarField() {
 
   for (let i = 0; i < N; i++) {
     const i3 = i * 3;
-    pos[i3]   = (Math.random() - .5) * 11000;
-    pos[i3+1] = (Math.random() - .5) * 11000;
-    pos[i3+2] = (Math.random() - .5) * 11000;
-    const c = new THREE.Color().setHSL(Math.random() * .25 + .5, .85, .5 + Math.random() * .35);
+    pos[i3]   = (Math.random() - .5) * 12000;
+    pos[i3+1] = (Math.random() - .5) * 12000;
+    pos[i3+2] = (Math.random() - .5) * 12000;
+
+    // 四组天体星光色彩：极地冰蓝、深邃紫罗兰、青空碧翠、炽热星白
+    const paletteChoice = Math.random();
+    let c;
+    if (paletteChoice < 0.45) {
+      c = new THREE.Color().setHSL(0.52 + Math.random() * 0.08, 0.9, 0.75); // 冰蓝
+    } else if (paletteChoice < 0.75) {
+      c = new THREE.Color().setHSL(0.72 + Math.random() * 0.1, 0.85, 0.7); // 紫罗兰
+    } else if (paletteChoice < 0.9) {
+      c = new THREE.Color().setHSL(0.44 + Math.random() * 0.06, 0.95, 0.8); // 碧翠
+    } else {
+      c = new THREE.Color(0xffffff); // 恒星纯白
+    }
     col[i3] = c.r; col[i3+1] = c.g; col[i3+2] = c.b;
-    sz[i] = Math.random() * 3.5 + 1.2;
+    sz[i] = Math.random() * 4.2 + 1.2;
     starVelocities[i3]   = (Math.random() - .5) * .35;
     starVelocities[i3+1] = (Math.random() - .5) * .35;
     starVelocities[i3+2] = (Math.random() - .5) * .35;
@@ -867,18 +1045,19 @@ function createStarField() {
   geo.setAttribute('size',     new THREE.BufferAttribute(sz, 1));
 
   const mat = new THREE.ShaderMaterial({
-    uniforms: { time: { value: 0 } },
+    uniforms: { time: { value: 0 }, warp: { value: 0 } },
     vertexShader: `
       attribute float size;
       attribute vec3 color;
       varying vec3 vColor;
       varying float vAlpha;
       uniform float time;
+      uniform float warp;
       void main(){
         vColor = color;
         vAlpha = 0.35 + 0.65 * sin(time * 0.45 + position.x * 0.008 + position.y * 0.012);
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = size * (320.0 / -mv.z);
+        gl_PointSize = (size + warp * 3.0) * (340.0 / -mv.z);
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
@@ -899,18 +1078,31 @@ function createStarField() {
 function updateStars(dt, t) {
   if (!starPoints) return;
   starPoints.material.uniforms.time.value = t;
+  const speedMult = 1 + warpSpeedFactor;
+  if (warpSpeedFactor > 0.01) {
+    warpSpeedFactor *= 0.93;
+    if (starPoints.material.uniforms.warp) {
+      starPoints.material.uniforms.warp.value = warpSpeedFactor;
+    }
+  } else {
+    warpSpeedFactor = 0;
+    if (starPoints.material.uniforms.warp) {
+      starPoints.material.uniforms.warp.value = 0;
+    }
+  }
+
   const p = starPoints.geometry.attributes.position.array;
   for (let i = 0; i < p.length; i += 3) {
-    p[i]   += starVelocities[i]   * dt * 9;
-    p[i+1] += starVelocities[i+1] * dt * 9;
-    p[i+2] += starVelocities[i+2] * dt * 9;
-    if (Math.abs(p[i])   > 5500) p[i]   *= -.98;
-    if (Math.abs(p[i+1]) > 5500) p[i+1] *= -.98;
-    if (Math.abs(p[i+2]) > 5500) p[i+2] *= -.98;
+    p[i]   += starVelocities[i]   * dt * 9 * speedMult;
+    p[i+1] += starVelocities[i+1] * dt * 9 * speedMult;
+    p[i+2] += (starVelocities[i+2] * dt * 9 + (speedMult > 1 ? 80 * dt : 0)) * speedMult;
+    if (Math.abs(p[i])   > 6000) p[i]   *= -.98;
+    if (Math.abs(p[i+1]) > 6000) p[i+1] *= -.98;
+    if (Math.abs(p[i+2]) > 6000) p[i+2] *= -.98;
   }
   starPoints.geometry.attributes.position.needsUpdate = true;
-  starPoints.rotation.y += 0.00018;
-  starPoints.rotation.x += 0.00009;
+  starPoints.rotation.y += 0.00022 * speedMult;
+  starPoints.rotation.x += 0.00011 * speedMult;
 }
 
 // ============================================================
@@ -942,20 +1134,51 @@ function spawnTrail(x, y) {
   }
 }
 
+function spawnMeteor(forced = false) {
+  const fromTop = Math.random() > 0.35;
+  const startX = fromTop ? (Math.random() * innerWidth * 1.15 - innerWidth * 0.1) : (innerWidth + 60);
+  const startY = fromTop ? -60 : (Math.random() * innerHeight * 0.45);
+  const angle = Math.PI * 0.73 + (Math.random() - 0.5) * 0.22;
+  const speed = (Math.random() * 800 + 750) * (forced ? 1.35 : 1);
+  const len = Math.random() * 160 + 120;
+  meteors.push({
+    x: startX,
+    y: startY,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    len: len,
+    life: 1.0,
+    decay: Math.random() * 0.016 + 0.012,
+    sz: Math.random() * 2.4 + 1.8,
+    hue: Math.random() * 0.22 + 0.52
+  });
+}
+
+function triggerWarpEffect() {
+  warpSpeedFactor = 7.5;
+  warpRings.push({
+    x: innerWidth / 2,
+    y: innerHeight / 2,
+    r: 15,
+    maxR: Math.max(innerWidth, innerHeight) * 0.85,
+    alpha: 0.95
+  });
+}
+
 function burst(cx, cy, count, hueBase) {
   playSynthSound('burst');
   const baseH = hueBase !== undefined ? hueBase : (Math.random() * 0.2 + 0.5);
   for (let i = 0; i < count; i++) {
     const a = Math.random() * Math.PI * 2;
-    const spd = Math.random() * 20 + 4;
+    const spd = Math.random() * 22 + 4;
     burstList.push({
       x: cx, y: cy,
       vx: Math.cos(a) * spd,
       vy: Math.sin(a) * spd,
       life: 1,
-      decay: Math.random() * 0.02 + 0.01,
-      sz: Math.random() * 5 + 2.5,
-      hue: baseH + (Math.random() - 0.5) * 0.15
+      decay: Math.random() * 0.02 + 0.009,
+      sz: Math.random() * 5.5 + 2.5,
+      hue: baseH + (Math.random() - 0.5) * 0.18
     });
   }
 }
@@ -977,7 +1200,78 @@ function drawParticles(dt) {
     }
   }
 
-  // 拖尾光晕
+  // 1. 空间跃迁冲击环 (Warp Shockwaves)
+  for (let i = warpRings.length - 1; i >= 0; i--) {
+    const ring = warpRings[i];
+    ring.r += (ring.maxR - ring.r) * dt * 4.5;
+    ring.alpha -= dt * 1.25;
+    if (ring.alpha <= 0.01 || ring.r >= ring.maxR * 0.96) {
+      warpRings.splice(i, 1);
+      continue;
+    }
+    pCtx.save();
+    pCtx.beginPath();
+    pCtx.arc(ring.x, ring.y, ring.r, 0, Math.PI * 2);
+    pCtx.lineWidth = 3.5 * ring.alpha;
+    pCtx.strokeStyle = `rgba(0, 255, 255, ${ring.alpha * 0.8})`;
+    pCtx.shadowColor = '#00ffff';
+    pCtx.shadowBlur = 16;
+    pCtx.stroke();
+    pCtx.restore();
+  }
+
+  // 2. 流星雨周期生成与渲染
+  if (Math.random() < 0.032 || triggerMeteorStorm > 0) {
+    if (triggerMeteorStorm > 0) triggerMeteorStorm--;
+    spawnMeteor();
+  }
+
+  for (let i = meteors.length - 1; i >= 0; i--) {
+    const m = meteors[i];
+    m.x += m.vx * dt;
+    m.y += m.vy * dt;
+    m.life -= m.decay;
+    if (m.life <= 0 || m.x < -100 || m.y > innerHeight + 100) {
+      meteors.splice(i, 1);
+      continue;
+    }
+    const speed = Math.hypot(m.vx, m.vy);
+    const tailX = m.x - (m.vx / speed) * m.len;
+    const tailY = m.y - (m.vy / speed) * m.len;
+
+    const grad = pCtx.createLinearGradient(tailX, tailY, m.x, m.y);
+    grad.addColorStop(0, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.5, `hsla(${m.hue * 360}, 100%, 75%, ${m.life * 0.45})`);
+    grad.addColorStop(0.85, `hsla(${m.hue * 360}, 100%, 90%, ${m.life * 0.85})`);
+    grad.addColorStop(1, `rgba(255, 255, 255, ${m.life})`);
+
+    pCtx.save();
+    pCtx.strokeStyle = grad;
+    pCtx.lineWidth = m.sz;
+    pCtx.lineCap = 'round';
+    pCtx.shadowColor = '#38bdf8';
+    pCtx.shadowBlur = 12;
+    pCtx.beginPath();
+    pCtx.moveTo(tailX, tailY);
+    pCtx.lineTo(m.x, m.y);
+    pCtx.stroke();
+    pCtx.restore();
+
+    // 伴随微小星尘火花
+    if (Math.random() < 0.25) {
+      burstList.push({
+        x: m.x, y: m.y,
+        vx: (Math.random() - .5) * 4,
+        vy: (Math.random() - .5) * 4,
+        life: 0.55,
+        decay: 0.04,
+        sz: Math.random() * 2 + 1,
+        hue: m.hue
+      });
+    }
+  }
+
+  // 3. 拖尾光晕
   for (const p of mouseTrail) {
     if (!p.on) continue;
     p.x += p.vx; p.y += p.vy; p.vy += 0.03;
@@ -995,7 +1289,7 @@ function drawParticles(dt) {
     pCtx.fill();
   }
 
-  // 拖尾粒子连线
+  // 4. 拖尾粒子连线
   pCtx.lineWidth = 0.5;
   for (let i = 0; i < mouseTrail.length; i++) {
     const a = mouseTrail[i]; if (!a.on) continue;
@@ -1014,7 +1308,7 @@ function drawParticles(dt) {
   }
   pCtx.globalAlpha = 1;
 
-  // 爆发星尘
+  // 5. 爆发星尘
   for (let i = burstList.length - 1; i >= 0; i--) {
     const p = burstList[i];
     p.x += p.vx; p.y += p.vy;
@@ -1077,13 +1371,20 @@ function initScene() {
           </div>`;
       }
     };
-    img.onload = () => fitImg(img, 120, 160);
+    img.onload = () => fitImg(img, 128, 172);
     img.src = cdnUrl;
     if (img.complete && (img.naturalWidth || img.width)) {
-      fitImg(img, 120, 160);
+      fitImg(img, 128, 172);
     }
 
     inner.appendChild(img);
+
+    // 卡片编号微光角标
+    const cardTag = document.createElement('span');
+    cardTag.className = 'card-tag';
+    cardTag.textContent = `#${String(d.index + 1).padStart(2, '0')}`;
+    inner.appendChild(cardTag);
+
     el.appendChild(inner);
 
     // 单击卡片呼出高清 Lightbox 详情
@@ -1097,20 +1398,20 @@ function initScene() {
     scene.add(obj);
     objects.push(obj);
 
-    // 形态 1：元素周期表照片墙 (Table)
+    // 形态 1：元素周期表照片墙 (Table) - 适配微距比例
     const tTable = new THREE.Object3D();
-    tTable.position.set(d.col * 140 - 1330, -(d.row * 180) + 990, 0);
+    tTable.position.set(d.col * 148 - 1406, -(d.row * 192) + 1056, 0);
     targets.table.push(tTable);
   }
 
-  // 形态 2：水晶球 (Sphere) - 斐波那契球面算法
+  // 形态 2：水晶球 (Sphere) - 斐波那契球面算法 (半经 850)
   const v = new THREE.Vector3();
   const l = objects.length;
   for (let i = 0; i < l; i++) {
     const phi = Math.acos(-1 + (2 * i) / l);
     const theta = Math.sqrt(l * Math.PI) * phi;
     const tSphere = new THREE.Object3D();
-    tSphere.position.set(800 * Math.cos(theta) * Math.sin(phi), 800 * Math.sin(theta) * Math.sin(phi), 800 * Math.cos(phi));
+    tSphere.position.set(850 * Math.cos(theta) * Math.sin(phi), 850 * Math.sin(theta) * Math.sin(phi), 850 * Math.cos(phi));
     v.copy(tSphere.position).multiplyScalar(2);
     tSphere.lookAt(v);
     targets.sphere.push(tSphere);
@@ -1120,7 +1421,7 @@ function initScene() {
   for (let i = 0; i < l; i++) {
     const phi = i * 0.175 + Math.PI;
     const tHelix = new THREE.Object3D();
-    tHelix.position.set(900 * Math.sin(phi), -(i * 8) + 450, 900 * Math.cos(phi));
+    tHelix.position.set(950 * Math.sin(phi), -(i * 9) + 480, 950 * Math.cos(phi));
     v.set(tHelix.position.x * 2, tHelix.position.y, tHelix.position.z * 2);
     tHelix.lookAt(v);
     targets.helix.push(tHelix);
@@ -1189,7 +1490,8 @@ function switchLayout(idx, immediate = false) {
   }
 
   if (!immediate) {
-    burst(innerWidth / 2, innerHeight / 2, 90);
+    triggerWarpEffect();
+    burst(innerWidth / 2, innerHeight / 2, 120);
     playSynthSound('switch');
   }
 
@@ -1202,10 +1504,10 @@ function switchLayout(idx, immediate = false) {
 
   const n = document.getElementById('layout-name');
   if (n) {
-    n.textContent = layoutNames[idx];
+    n.textContent = layoutTitles[idx] || layoutNames[idx];
     n.className = 'show';
     clearTimeout(n._timer);
-    n._timer = setTimeout(() => n.className = '', 1600);
+    n._timer = setTimeout(() => n.className = '', 2200);
   }
 }
 
@@ -1255,7 +1557,14 @@ function bindUIEvents() {
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight') switchLayout((currentLayout + 1) % 4);
     if (e.key === 'ArrowLeft')  switchLayout((currentLayout + 3) % 4);
-    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'Escape') {
+      closeLightbox();
+      if (document.body.classList.contains('zen-mode')) {
+        document.body.classList.remove('zen-mode');
+        const zb = document.getElementById('btn-zen-mode');
+        if (zb) zb.classList.remove('active');
+      }
+    }
   });
 
   // 鼠标移动与光晕
@@ -1263,6 +1572,20 @@ function bindUIEvents() {
     const cg = document.getElementById('cursor-glow');
     if (cg) cg.style.cssText = `left:${e.clientX}px;top:${e.clientY}px`;
     spawnTrail(e.clientX, e.clientY);
+  });
+
+  // 单击空白处激发微光星尘，沉浸模式下点击退出
+  document.addEventListener('click', e => {
+    if (e.target.closest('#bottom-dock') || e.target.closest('#gesture-control-bar') || e.target.closest('.xb-brand-pill-container') || e.target.closest('.guide-modal') || e.target.closest('#photo-lightbox')) {
+      return;
+    }
+    if (document.body.classList.contains('zen-mode')) {
+      document.body.classList.remove('zen-mode');
+      const zb = document.getElementById('btn-zen-mode');
+      if (zb) zb.classList.remove('active');
+      return;
+    }
+    burst(e.clientX, e.clientY, 40);
   });
 
   // 移动端单指轻划切换形态
@@ -1285,6 +1608,18 @@ function bindUIEvents() {
   const camBtn = document.getElementById('toggle-camera-btn');
   if (camBtn) camBtn.addEventListener('click', toggleCameraGesture);
 
+  // 流星与华彩爆发按钮
+  const meteorBtn = document.getElementById('btn-meteor-burst');
+  if (meteorBtn) {
+    meteorBtn.addEventListener('click', () => {
+      triggerMeteorStorm = 16;
+      triggerWarpEffect();
+      burst(innerWidth / 2, innerHeight / 2, 140);
+      for (let i = 0; i < 6; i++) spawnMeteor(true);
+      setGestureBadge('🌌', '天体流星暴爆发 · 漫天星华');
+    });
+  }
+
   // 自动巡航开关
   const orbitBtn = document.getElementById('btn-auto-orbit');
   if (orbitBtn) {
@@ -1294,6 +1629,17 @@ function bindUIEvents() {
       setGestureBadge('🔄', autoOrbit ? '自动巡航漫游中' : '自动巡航已暂停');
     });
   }
+
+  // 沉浸全屏画廊开关
+  const zenBtn = document.getElementById('btn-zen-mode');
+  const zenHint = document.getElementById('zen-exit-hint');
+  const toggleZen = () => {
+    document.body.classList.toggle('zen-mode');
+    const isZen = document.body.classList.contains('zen-mode');
+    if (zenBtn) zenBtn.classList.toggle('active', isZen);
+  };
+  if (zenBtn) zenBtn.addEventListener('click', toggleZen);
+  if (zenHint) zenHint.addEventListener('click', toggleZen);
 
   // 手势指南弹窗
   const guideModal = document.getElementById('guideModal');
@@ -1660,6 +2006,76 @@ function initFallbackStars() {
   }
 }
 
+function createCelestialAstrolabe() {
+  if (!starScene) return;
+  astrolabeGroup = new THREE.Group();
+
+  // 1. 核心脉冲星 (Pulsar Core) - 闪烁的晶体内核
+  const coreGeo = new THREE.IcosahedronGeometry(75, 1);
+  const coreMat = new THREE.MeshBasicMaterial({
+    color: 0x38bdf8,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.85
+  });
+  const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+  astrolabeGroup.add(coreMesh);
+
+  // 2. 核心外层辉光晶格 (Outer Halo Shell)
+  const haloGeo = new THREE.IcosahedronGeometry(120, 2);
+  const haloMat = new THREE.MeshBasicMaterial({
+    color: 0xa855f7,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.42
+  });
+  const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+  astrolabeGroup.add(haloMesh);
+
+  // 3. 浑天仪环 1 (赤道天体环 Equatorial Ring - 半径 830)
+  const ring1Geo = new THREE.TorusGeometry(830, 2.5, 16, 128);
+  const ring1Mat = new THREE.MeshBasicMaterial({
+    color: 0x06b6d4,
+    transparent: true,
+    opacity: 0.65
+  });
+  const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
+  ring1.rotation.x = Math.PI / 2;
+  astrolabeGroup.add(ring1);
+
+  // 4. 浑天仪环 2 (经线极环 Polar Ring - 半径 830)
+  const ring2Geo = new THREE.TorusGeometry(830, 2.2, 16, 128);
+  const ring2Mat = new THREE.MeshBasicMaterial({
+    color: 0x8b5cf6,
+    transparent: true,
+    opacity: 0.55
+  });
+  const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+  ring2.rotation.y = Math.PI / 4;
+  astrolabeGroup.add(ring2);
+
+  // 5. 浑天仪环 3 (黄道倾斜环 Ecliptic Ring - 半径 865)
+  const ring3Geo = new THREE.TorusGeometry(865, 2.8, 16, 128);
+  const ring3Mat = new THREE.MeshBasicMaterial({
+    color: 0x38bdf8,
+    transparent: true,
+    opacity: 0.75
+  });
+  const ring3 = new THREE.Mesh(ring3Geo, ring3Mat);
+  ring3.rotation.x = Math.PI / 3;
+  ring3.rotation.y = Math.PI / 6;
+  astrolabeGroup.add(ring3);
+
+  // 6. 空间展览厅激光地平网格 (Floor Laser Grid)
+  floorLaserGrid = new THREE.GridHelper(6000, 48, 0x00ffff, 0x1e293b);
+  floorLaserGrid.position.y = -1250;
+  floorLaserGrid.material.transparent = true;
+  floorLaserGrid.material.opacity = 0.4;
+  starScene.add(floorLaserGrid);
+
+  starScene.add(astrolabeGroup);
+}
+
 function initStarRenderer() {
   try {
     const c = document.createElement('canvas');
@@ -1678,6 +2094,7 @@ function initStarRenderer() {
 
     starScene = new THREE.Scene();
     if (starPoints) starScene.add(starPoints);
+    createCelestialAstrolabe();
     starCamera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 1, 10000);
     starCamera.position.z = 3000;
 
@@ -1712,6 +2129,21 @@ function animate() {
 
   if (starRenderer) {
     try {
+      if (starCamera && camera) {
+        starCamera.position.copy(camera.position);
+        starCamera.quaternion.copy(camera.quaternion);
+      }
+      if (astrolabeGroup) {
+        astrolabeGroup.rotation.y += 0.0032;
+        astrolabeGroup.rotation.x += 0.0016;
+        const pulse = 1 + Math.sin(t * 3.5) * 0.12;
+        astrolabeGroup.children[0].scale.set(pulse, pulse, pulse);
+        astrolabeGroup.children[1].scale.set(1 / pulse, 1 / pulse, 1 / pulse);
+        astrolabeGroup.visible = (currentLayout === 1 || currentLayout === 2);
+      }
+      if (floorLaserGrid) {
+        floorLaserGrid.visible = (currentLayout === 3 || currentLayout === 0);
+      }
       updateStars(dt, t);
       starRenderer.render(starScene, starCamera);
     } catch (e) {
