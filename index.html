@@ -38,6 +38,7 @@
   }
 }
 </script>
+<script src="https://guzhicdn.21212121.xyz/vendor/tweenjs/tween.umd.js"></script>
 <style>
 :root {
   --cyan-glow: #00ffff;
@@ -621,13 +622,13 @@ canvas { display: block; }
 
 <!-- 左上角手势状态控制台 -->
 <div id="gesture-control-bar">
-  <button id="toggle-camera-btn" class="hud-btn active" title="点击开启或关闭手势识别">
-    <span class="status-dot active" id="camera-status-dot"></span>
-    <span id="camera-btn-text">手势识别已开启</span>
+  <button id="toggle-camera-btn" class="hud-btn" title="点击开启或关闭手势识别">
+    <span class="status-dot" id="camera-status-dot"></span>
+    <span id="camera-btn-text">开启手势控制</span>
   </button>
   <div id="gesture-badge">
     <span id="gesture-badge-icon">✨</span>
-    <span id="gesture-badge-text">镜头前展示手掌即可隔空控制</span>
+    <span id="gesture-badge-text">鼠标拖动旋转 / 滚轮推拉</span>
   </div>
 </div>
 
@@ -964,6 +965,18 @@ function drawParticles(dt) {
   const w = pCanvas.width, h = pCanvas.height;
   pCtx.clearRect(0, 0, w, h);
 
+  // 若 WebGL 星空未启用，使用 2D Canvas 绘制微光星空兜底
+  if (!starRenderer && fallbackStars.length) {
+    const t = clock.getElapsedTime();
+    for (const s of fallbackStars) {
+      const a = s.alpha * (0.4 + 0.6 * Math.sin(t * s.spd + s.phase));
+      pCtx.fillStyle = `rgba(180, 230, 255, ${a})`;
+      pCtx.beginPath();
+      pCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      pCtx.fill();
+    }
+  }
+
   // 拖尾光晕
   for (const p of mouseTrail) {
     if (!p.on) continue;
@@ -1168,7 +1181,13 @@ function fitImg(img, dw, dh) {
 function switchLayout(idx, immediate = false) {
   currentLayout = idx;
   const targetArray = [targets.table, targets.sphere, targets.helix, targets.grid][idx];
-  
+  if (!targetArray || !targetArray.length) return;
+
+  // 切换形态时主动轻微复位视角中心，确保形态聚焦于画面中心
+  if (controls && controls.target) {
+    controls.target.set(0, 0, 0);
+  }
+
   if (!immediate) {
     burst(innerWidth / 2, innerHeight / 2, 90);
     playSynthSound('switch');
@@ -1182,16 +1201,22 @@ function switchLayout(idx, immediate = false) {
   });
 
   const n = document.getElementById('layout-name');
-  n.textContent = layoutNames[idx];
-  n.className = 'show';
-  setTimeout(() => n.className = '', 1600);
+  if (n) {
+    n.textContent = layoutNames[idx];
+    n.className = 'show';
+    clearTimeout(n._timer);
+    n._timer = setTimeout(() => n.className = '', 1600);
+  }
 }
 
 function doTransform(tgts, dur) {
-  if (typeof TWEEN !== 'undefined') {
+  if (!tgts || !tgts.length) return;
+
+  if (typeof TWEEN !== 'undefined' && TWEEN.Tween) {
     TWEEN.removeAll();
     for (let i = 0; i < objects.length; i++) {
       const o = objects[i], t = tgts[i];
+      if (!o || !t) continue;
       new TWEEN.Tween(o.position)
         .to({ x: t.position.x, y: t.position.y, z: t.position.z }, Math.random() * dur + dur)
         .easing(TWEEN.Easing.Exponential.InOut)
@@ -1201,7 +1226,19 @@ function doTransform(tgts, dur) {
         .easing(TWEEN.Easing.Exponential.InOut)
         .start();
     }
-    new TWEEN.Tween({}).to({}, dur * 2).onUpdate(() => renderer.render(scene, camera)).start();
+    new TWEEN.Tween({}).to({}, dur * 2).onUpdate(() => {
+      if (renderer && scene && camera) renderer.render(scene, camera);
+    }).start();
+  } else {
+    // 强力同步兜底：无 TWEEN 时直接应用目标坐标，绝不允许物体悬空散落
+    for (let i = 0; i < objects.length; i++) {
+      const o = objects[i], t = tgts[i];
+      if (o && t) {
+        o.position.copy(t.position);
+        o.rotation.copy(t.rotation);
+      }
+    }
+    if (renderer && scene && camera) renderer.render(scene, camera);
   }
 }
 
@@ -1331,14 +1368,27 @@ async function startCamera() {
       const { FilesetResolver, HandLandmarker } = visionBundle;
       const vision = await FilesetResolver.forVisionTasks(wasmPath);
 
-      handLandmarker = await HandLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: modelAssetPath,
-          delegate: 'GPU'
-        },
-        runningMode: 'VIDEO',
-        numHands: 1
-      });
+      // 优先 GPU 硬件加速，若环境不支持 WebGL/GPU 则优雅回退到 CPU
+      try {
+        handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: modelAssetPath,
+            delegate: 'GPU'
+          },
+          runningMode: 'VIDEO',
+          numHands: 1
+        });
+      } catch (gpuErr) {
+        console.warn('HandLandmarker GPU delegate failed, retrying CPU delegate:', gpuErr);
+        handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: modelAssetPath,
+            delegate: 'CPU'
+          },
+          runningMode: 'VIDEO',
+          numHands: 1
+        });
+      }
       isModelLoading = false;
     }
 
@@ -1559,10 +1609,22 @@ function setGestureBadge(icon, text) {
 //  动力学平滑驱动与控制器同步
 // ============================================================
 function updateDynamicMotion(dt) {
+  if (!controls || !camera) return;
+
+  // 坐标防御检测，防止手势计算产生 NaN 导致相机或物体消失
+  if (isNaN(controls.target.x) || isNaN(controls.target.y) || isNaN(controls.target.z)) {
+    controls.target.set(0, 0, 0);
+  }
+  if (isNaN(camera.position.x) || isNaN(camera.position.y) || isNaN(camera.position.z)) {
+    camera.position.set(0, 0, 3000);
+  }
+
   if (handState.active && handState.mode === 'OPEN') {
     // 手势驱动插值
-    handState.rotY += (handState.targetRotY - handState.rotY) * 3.5 * dt;
-    handState.rotX += (handState.targetRotX - handState.rotX) * 3.5 * dt;
+    const rotY = isNaN(handState.targetRotY) ? 0 : handState.targetRotY;
+    const rotX = isNaN(handState.targetRotX) ? 0 : handState.targetRotX;
+    handState.rotY += (rotY - handState.rotY) * 3.5 * dt;
+    handState.rotX += (rotX - handState.rotX) * 3.5 * dt;
     controls.target.x += (handState.rotY * 320 - controls.target.x) * 2.5 * dt;
     controls.target.y += (-handState.rotX * 180 - controls.target.y) * 2.5 * dt;
   } else if (autoOrbit) {
@@ -1579,29 +1641,58 @@ function updateDynamicMotion(dt) {
 }
 
 // ============================================================
-//  主渲染器与动画时钟
+//  主渲染器与动画时钟 (支持 WebGL 原生与 Canvas 2D 容灾兜底)
 // ============================================================
-let starRenderer, starScene, starCamera;
+let starRenderer = null, starScene = null, starCamera = null;
+let fallbackStars = [];
+
+function initFallbackStars() {
+  fallbackStars = [];
+  for (let i = 0; i < 180; i++) {
+    fallbackStars.push({
+      x: Math.random() * innerWidth,
+      y: Math.random() * innerHeight,
+      r: Math.random() * 1.8 + 0.6,
+      alpha: Math.random() * 0.75 + 0.25,
+      phase: Math.random() * Math.PI * 2,
+      spd: Math.random() * 1.5 + 0.5
+    });
+  }
+}
+
 function initStarRenderer() {
-  const c = document.createElement('canvas');
-  c.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none';
-  document.body.insertBefore(c, document.getElementById('container'));
+  try {
+    const c = document.createElement('canvas');
+    c.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none';
+    document.body.insertBefore(c, document.getElementById('container'));
 
-  starRenderer = new THREE.WebGLRenderer({ canvas: c, alpha: true, antialias: true });
-  starRenderer.setSize(innerWidth, innerHeight);
-  starRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  starRenderer.setClearColor(0x000000, 0);
-
-  starScene = new THREE.Scene();
-  starScene.add(starPoints);
-  starCamera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 1, 10000);
-  starCamera.position.z = 3000;
-
-  window.addEventListener('resize', () => {
+    starRenderer = new THREE.WebGLRenderer({
+      canvas: c,
+      alpha: true,
+      antialias: true,
+      failIfMajorPerformanceCaveat: false
+    });
     starRenderer.setSize(innerWidth, innerHeight);
-    starCamera.aspect = innerWidth / innerHeight;
-    starCamera.updateProjectionMatrix();
-  });
+    starRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    starRenderer.setClearColor(0x000000, 0);
+
+    starScene = new THREE.Scene();
+    if (starPoints) starScene.add(starPoints);
+    starCamera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 1, 10000);
+    starCamera.position.z = 3000;
+
+    window.addEventListener('resize', () => {
+      if (starRenderer && starCamera) {
+        starRenderer.setSize(innerWidth, innerHeight);
+        starCamera.aspect = innerWidth / innerHeight;
+        starCamera.updateProjectionMatrix();
+      }
+    });
+  } catch (err) {
+    console.warn('WebGL StarRenderer unavailable, activating 2D Canvas star background:', err);
+    starRenderer = null;
+    initFallbackStars();
+  }
 }
 
 function animate() {
@@ -1613,25 +1704,53 @@ function animate() {
     TWEEN.update();
   }
 
-  updateDynamicMotion(dt);
-  updateStars(dt, t);
-  if (starRenderer) starRenderer.render(starScene, starCamera);
-  drawParticles(dt);
-  if (renderer) renderer.render(scene, camera);
+  try {
+    updateDynamicMotion(dt);
+  } catch (e) {
+    console.warn('updateDynamicMotion error:', e);
+  }
+
+  if (starRenderer) {
+    try {
+      updateStars(dt, t);
+      starRenderer.render(starScene, starCamera);
+    } catch (e) {
+      console.warn('starRenderer error, switching to fallback stars:', e);
+      starRenderer = null;
+      initFallbackStars();
+    }
+  }
+
+  try {
+    drawParticles(dt);
+  } catch (e) {
+    console.warn('drawParticles error:', e);
+  }
+
+  if (renderer && scene && camera) {
+    try {
+      renderer.render(scene, camera);
+    } catch (e) {
+      console.error('CSS3D render error:', e);
+    }
+  }
 }
 
 // ============================================================
-//  启动序列
+//  启动序列 (全隔离防御容灾)
 // ============================================================
-buildPhotoData();
-createStarField();
-initScene();
-initStarRenderer();
-initParticleCanvas();
-animate();
-startCamera(); // 默认静默开启手势控制 (纯后台运行)
+try { buildPhotoData(); } catch (e) { console.error('buildPhotoData error:', e); }
+try { createStarField(); } catch (e) { console.error('createStarField error:', e); }
+try { initScene(); } catch (e) { console.error('initScene error:', e); }
+try { initStarRenderer(); } catch (e) { console.error('initStarRenderer error:', e); }
+try { initParticleCanvas(); } catch (e) { console.error('initParticleCanvas error:', e); }
+try { animate(); } catch (e) { console.error('animate error:', e); }
+
+// 延迟在首帧与 3D 渲染就绪后启动手势检测，绝不阻塞 3D 场景与首屏呈现
+setTimeout(() => {
+  startCamera().catch(e => console.warn('startCamera silent catch:', e));
+}, 120);
 
 </script>
-<script src="https://guzhicdn.21212121.xyz/vendor/tweenjs/tween.umd.js"></script>
 </body>
 </html>
